@@ -10,14 +10,35 @@ Connect to your server using SSH with the provided IP address:
 ssh root@YOUR_SERVER_IP
 ```
 
-### 1.2. Update and Install Dependencies
+### 1.2. Create a Non-Root User
+
+To enhance security, create a new user to avoid working as root.
+
+```bash
+# Create a new user
+adduser <username>
+
+# Grant administrative privileges
+usermod -aG sudo <username>
+
+# Set up SSH for the new user
+rsync --archive --chown=<username>:<username> ~/.ssh /home/<username>
+```
+
+After creating the user, log out and log back in with the new user credentials:
+
+```bash
+ssh -i /path/to/your/ssh_key <username>@YOUR_SERVER_IP
+```
+
+### 1.3. Update and Install Dependencies
 Update the server's package list and install necessary software:
 ```bash
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y nginx certbot python3-certbot-nginx htop git curl
 ```
 
-### 1.3. Configure Firewall
+### 1.4. Configure Firewall
 Allow SSH and HTTP/HTTPS traffic through the firewall.
 ```bash
 sudo ufw allow 'Nginx Full'
@@ -26,6 +47,8 @@ sudo ufw enable
 ```
 
 ## 2. Install Docker Engine
+
+For further instructions, you can refer to the official documentation: https://docs.docker.com/engine/install/ubuntu/
 
 ### 2.1. Set up Docker's apt repository.
 
