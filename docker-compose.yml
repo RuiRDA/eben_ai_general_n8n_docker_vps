@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: postgres_eben_ai
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - eben_ai_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n_eben_ai
+    restart: always
+    environment:
+      - N8N_HOST=n8n.eben_ai_one.ebenaisolutions.pt
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - NODE_ENV=production
+      - WEBHOOK_URL=https://n8n.eben_ai_one.ebenaisolutions.pt/
+      - GENERIC_TIMEZONE=Europe/Lisbon
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE}
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
+    ports:
+      - "127.0.0.1:5678:5678"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - eben_ai_network
+
+  baserow:
+    image: baserow/baserow:1.20.0
+    container_name: baserow_eben_ai
+    restart: always
+    environment:
+      - BASEROW_PUBLIC_URL=${BASEROW_PUBLIC_URL}
+      - WEB_FRONTEND_URL=https://baserow.eben_ai_one.ebenaisolutions.pt
+      - PRIVATE_BACKEND_URL=http://baserow:80
+      - DATABASE_HOST=postgres
+      - DATABASE_NAME=${POSTGRES_DB}
+      - DATABASE_USER=${POSTGRES_USER}
+      - DATABASE_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - baserow_data:/baserow/data
+    networks:
+      - eben_ai_network
+
+  redis:
+    image: redis:alpine
+    container_name: redis_eben_ai
+    restart: always
+    networks:
+      - eben_ai_network
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx_eben_ai
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - /etc/letsencrypt:/etc/letsencrypt
+    depends_on:
+      - n8n
+      - baserow
+      - portainer
+      - redis
+    networks:
+      - eben_ai_network
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer_eben_ai
+    restart: always
+    command: -H unix:///var/run/docker.sock
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - eben_ai_network
+
+volumes:
+  postgres_data:
+  n8n_data:
+  baserow_data:
+  portainer_data:
+  redis_data:
+
+networks:
+  eben_ai_network:
+    driver: bridge
