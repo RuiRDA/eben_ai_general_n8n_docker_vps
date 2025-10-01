@@ -55,8 +55,7 @@ services:
     restart: always
     environment:
       - BASEROW_PUBLIC_URL=${BASEROW_PUBLIC_URL}
-      - WEB_FRONTEND_URL=https://baserow.eben-ai-one.ebenaisolutions.pt
-      - PRIVATE_BACKEND_URL=http://baserow:80
+      - BASEROW_CADDY_ADDRESSES=baserow.eben-ai-one.ebenaisolutions.pt
       - DATABASE_HOST=postgres
       - DATABASE_NAME=${POSTGRES_DB}
       - DATABASE_USER=${POSTGRES_USER}
