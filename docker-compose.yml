@@ -24,11 +24,11 @@ services:
     container_name: n8n_eben_ai
     restart: always
     environment:
-      - N8N_HOST=n8n.eben_ai_one.ebenaisolutions.pt
+      - N8N_HOST=n8n.eben-ai-one.ebenaisolutions.pt
       - N8N_PORT=5678
       - N8N_PROTOCOL=https
       - NODE_ENV=production
-      - WEBHOOK_URL=https://n8n.eben_ai_one.ebenaisolutions.pt/
+      - WEBHOOK_URL=https://n8n.eben-ai-one.ebenaisolutions.pt/
       - GENERIC_TIMEZONE=Europe/Lisbon
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=postgres
@@ -55,7 +55,7 @@ services:
     restart: always
     environment:
       - BASEROW_PUBLIC_URL=${BASEROW_PUBLIC_URL}
-      - WEB_FRONTEND_URL=https://baserow.eben_ai_one.ebenaisolutions.pt
+      - WEB_FRONTEND_URL=https://baserow.eben-ai-one.ebenaisolutions.pt
       - PRIVATE_BACKEND_URL=http://baserow:80
       - DATABASE_HOST=postgres
       - DATABASE_NAME=${POSTGRES_DB}
@@ -86,7 +86,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./conf.d:/etc/nginx/conf.d
       - /etc/letsencrypt:/etc/letsencrypt
     depends_on:
       - n8n

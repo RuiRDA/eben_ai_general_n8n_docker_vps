@@ -78,8 +78,8 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 
 Clone the project repository to your server:
 ```bash
-git clone <repo-url> /opt/eben_ai
-cd /opt/eben_ai/Docker_setup
+git clone <repo-url> .
+cd ./
 ```
 
 ## 4. Configure Environment Variables
@@ -95,9 +95,9 @@ nano .env
 
 In your domain provider's dashboard, create the following DNS records pointing to your server's IP address:
 
-- **A Record (n8n):** `n8n.eben_ai_one.ebenaisolutions.pt` -> `YOUR_SERVER_IP`
-- **A Record (Baserow):** `baserow.eben_ai_one.ebenaisolutions.pt` -> `YOUR_SERVER_IP`
-- **A Record (Portainer):** `portainer.eben_ai_one.ebenaisolutions.pt` -> `YOUR_SERVER_IP`
+- **A Record (n8n):** `n8n.eben-ai-one.ebenaisolutions.pt` -> `YOUR_SERVER_IP`
+- **A Record (Baserow):** `baserow.eben-ai-one.ebenaisolutions.pt` -> `YOUR_SERVER_IP`
+- **A Record (Portainer):** `portainer.eben-ai-one.ebenaisolutions.pt` -> `YOUR_SERVER_IP`
 
 ## 6. Obtain SSL Certificates and Deploy
 
@@ -109,7 +109,7 @@ Run Certbot to obtain the SSL certificates.
 # Ensure the host NGINX is running for certificate validation
 sudo systemctl start nginx
 
-sudo certbot --nginx -d n8n.eben_ai_one.ebenaisolutions.pt -d baserow.eben_ai_one.ebenaisolutions.pt -d portainer.eben_ai_one.ebenaisolutions.pt --register-unsafely-without-email --agree-tos
+sudo certbot --nginx -d n8n.eben-ai-one.ebenaisolutions.pt -d baserow.eben-ai-one.ebenaisolutions.pt -d portainer.eben-ai-one.ebenaisolutions.pt --register-unsafely-without-email --agree-tos
 ```
 Follow the on-screen instructions and choose to redirect HTTP traffic to HTTPS.
 
@@ -127,9 +127,9 @@ sudo docker compose up -d --force-recreate
 
 - **Check container status:** `docker-compose ps`
 - **Access services:**
-  - **n8n:** `https://n8n.eben_ai_one.ebenaisolutions.pt`
-  - **Baserow:** `https://baserow.eben_ai_one.ebenaisolutions.pt`
-  - **Portainer:** `https://portainer.eben_ai_one.ebenaisolutions.pt`
+  - **n8n:** `https://n8n.eben-ai-one.ebenaisolutions.pt`
+  - **Baserow:** `https://baserow.eben-ai-one.ebenaisolutions.pt`
+  - **Portainer:** `https://portainer.eben-ai-one.ebenaisolutions.pt`
 
 ## 8. Portainer First-Time Setup
 
@@ -138,6 +138,6 @@ When you first access Portainer, you will be prompted to create an administrator
 ## 9. Backups
 
 Regular backups are configured for the PostgreSQL database. It is also recommended to back up the following files:
-- `/opt/eben_ai/Docker_setup/docker-compose.yml`
-- `/opt/eben_ai/Docker_setup/.env`
+- `./docker-compose.yml`
+- `./.env`
 - The `/etc/letsencrypt` directory.
