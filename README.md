@@ -86,7 +86,7 @@ cd ./
 
 Create a `.env` file by copying the example and fill in your secure credentials:
 ```bash
-cp .env.example .env
+cp .example_env .env
 nano .env
 ```
 **Important:** Replace all placeholder values (e.g., `secure_password_here`) with strong, unique passwords.
