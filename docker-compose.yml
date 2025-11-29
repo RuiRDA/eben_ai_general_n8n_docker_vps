@@ -21,6 +21,7 @@ services:
 
   n8n:
     image: n8nio/n8n:latest
+    pull_policy: always
     container_name: n8n_eben_ai
     restart: always
     environment:
