@@ -49,9 +49,12 @@ services:
       - n8n_data:/home/node/.n8n
     networks:
       - eben_ai_network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
 
   baserow:
-    image: baserow/baserow:1.20.0
+    image: baserow/baserow:latest
     container_name: baserow_eben_ai
     restart: always
     environment:
