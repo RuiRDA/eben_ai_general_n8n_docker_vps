@@ -6,7 +6,8 @@ x-hardening: &hardening
   pids_limit: 256
 services:
   postgres:
-    image: postgres:17.11-alpine3.23
+    image: maia-postgres:17.11-security1
+    build: {context: ., dockerfile: images/postgres.Dockerfile}
     restart: unless-stopped
     environment:
       POSTGRES_USER: maia_migrator
@@ -99,7 +100,8 @@ services:
     cpus: 1
   proxy:
     <<: *hardening
-    image: caddy:2.11.4-alpine
+    image: maia-caddy:2.11.4-security1
+    build: {context: ., dockerfile: images/caddy.Dockerfile}
     cap_add: [NET_BIND_SERVICE]
     environment:
       APP_DOMAIN: ${APP_DOMAIN:?Set the application domain}
