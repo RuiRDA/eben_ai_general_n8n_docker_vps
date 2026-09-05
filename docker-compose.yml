@@ -51,7 +51,7 @@ services:
       retries: 3
   n8n:
     <<: *hardening
-    image: docker.n8n.io/n8nio/n8n:2.37.10
+    image: n8nio/n8n:2.37.10
     user: '1000:1000'
     env_file: ./private/n8n.env
     environment:

@@ -1,7 +1,7 @@
 name: Verify private Maia infrastructure
 on:
   push:
-    branches: [main, 'codex/**']
+    branches: [main]
   pull_request:
   workflow_dispatch:
 permissions: {contents: read}
@@ -34,7 +34,7 @@ jobs:
         run: .security-tools/trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 maia-caddy:test
       - name: Scan n8n
         if: always()
-        run: .security-tools/trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 docker.n8n.io/n8nio/n8n:2.37.10
+        run: .security-tools/trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 n8nio/n8n:2.37.10
       - name: Validate proxy configuration
         if: always()
         run: docker run --rm -e APP_DOMAIN=maia.example.test -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" maia-caddy:test caddy validate --config /etc/caddy/Caddyfile
