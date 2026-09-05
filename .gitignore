@@ -1,4 +1,8 @@
-# SSH Keys
-hetzner_key
-hetzner_key.pub
+private/
 .env
+*.dump
+*.age
+backups/
+
+.security-tools/
+reports/
