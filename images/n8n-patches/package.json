@@ -1,0 +1,1 @@
+{"name":"maia-n8n-security-patches","private":true,"version":"1.0.0","dependencies":{"fast-uri":"3.1.6","nodemailer":"9.0.1","toml":"4.2.0"}}

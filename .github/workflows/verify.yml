@@ -32,9 +32,23 @@ jobs:
       - name: Scan proxy
         if: always()
         run: .security-tools/trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 maia-caddy:test
+      - name: Build patched n8n
+        if: always()
+        run: docker build -f images/n8n.Dockerfile -t maia-n8n:test .
       - name: Scan n8n
         if: always()
-        run: .security-tools/trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 n8nio/n8n:2.37.10
+        run: .security-tools/trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 maia-n8n:test
       - name: Validate proxy configuration
         if: always()
         run: docker run --rm -e APP_DOMAIN=maia.example.test -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" maia-caddy:test caddy validate --config /etc/caddy/Caddyfile
+      - name: Verify patched n8n starts
+        if: always()
+        run: |
+          docker run --rm maia-n8n:test --version
+          docker run -d --name maia-n8n-check -p 127.0.0.1:5678:5678 -e N8N_DIAGNOSTICS_ENABLED=false -e N8N_SECURE_COOKIE=false maia-n8n:test
+          for attempt in $(seq 1 45); do
+            if curl --fail --silent http://127.0.0.1:5678/healthz/readiness; then exit 0; fi
+            sleep 2
+          done
+          docker logs maia-n8n-check
+          exit 1
