@@ -26,6 +26,10 @@ jobs:
         run: docker build -f images/postgres.Dockerfile -t maia-postgres:test .
       - name: Scan PostgreSQL
         run: .security-tools/trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 maia-postgres:test
+      - name: Rehearse encrypted backup and isolated restore
+        run: |
+          sudo apt-get update && sudo apt-get install -y age
+          sh tests/backup-restore.sh
       - name: Build patched proxy
         if: always()
         run: docker build -f images/caddy.Dockerfile -t maia-caddy:test .

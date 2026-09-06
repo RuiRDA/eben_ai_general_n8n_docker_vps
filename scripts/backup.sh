@@ -19,7 +19,7 @@ for db in maia n8n; do
 done
 # Software/configuration only, kept separately from customer databases.
 mkdir -p "$BACKUP_DESTINATION/configuration"
-tar -czf "$tmp" ./private/app.env ./private/n8n.env ./private/postgres_password ./private/maia_runtime_password ./private/n8n_password ./Caddyfile ./docker-compose.yml ./postgres/init.sh
+tar -czf "$tmp" ./private/app.env ./private/n8n.env ./private/postgres_password ./private/maia_runtime_password ./private/n8n_password ./.env ./Caddyfile ./docker-compose.yml ./postgres/init.sh ./images ./scripts ./systemd
 age -r "$BACKUP_AGE_RECIPIENT" -o "$BACKUP_DESTINATION/configuration/config-$stamp.tar.gz.age" "$tmp"
 # Exactly seven days. Scope pruning to this script's encrypted archive names.
 find "$BACKUP_DESTINATION" -maxdepth 1 -type f \( -name 'maia-*.dump.age' -o -name 'n8n-*.dump.age' \) -mmin +10080 -delete
