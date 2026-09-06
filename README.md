@@ -1,143 +1,41 @@
-# Eben AI - Infrastructure Setup Guide
+# RE/MAX Maia private infrastructure
 
-This guide provides a step-by-step process for setting up the complete infrastructure on a Hetzner VPS using Docker.
+Fresh single-client deployment for the paired Eben AI Real Estate OS app. PostgreSQL and n8n are private. Caddy exposes HTTPS to the app; `/api/internal/*` is blocked at the edge. No Docker socket, Portainer, public database, scraping service or MFA requirement.
 
-## 1. Initial Server Setup
+## Install on client-controlled infrastructure
 
-### 1.1. Connect to the VPS
-Connect to your server using SSH with the provided IP address:
-```bash
-ssh root@YOUR_SERVER_IP
-```
+Use a patched Linux host with Docker Engine/Compose, age, util-linux/flock and sufficient memory (at least 8 GB recommended for configured limits). Restrict SSH to authorized administrators; expose only SSH and 80/443. Review SSH authentication independently of application passwords. No host changes are performed by this repository automatically.
 
-### 1.2. Create a Non-Root User
+1. Place this checkout in `/opt/maia`. Create a private `private/` directory (0700) and copy the examples. Generate independent random PostgreSQL owner, app runtime and n8n passwords, the app auth secret, a separate stable suppression HMAC key, and n8n encryption key. Files must be 0600 and excluded from Git.
+2. Set APP_DOMAIN and MAIA_APP_IMAGE in `.env`. Build/tag the paired app's tested revision; use its immutable digest for MAIA_APP_IMAGE. Set app.env with the matching runtime DB URL (URL-encode the password), HTTPS public URL and private provider configuration. Set n8n.env with its separate database password/encryption key. Placeholders must never reach a deployed app.
+3. `docker compose build postgres proxy n8n` then `docker compose up -d postgres`. The initializer creates separate maia and n8n databases and runtime roles. PostgreSQL has no host port. The owner/migration role is reserved for private maintenance.
+4. Build the app Dockerfile `tools` target from the same tested commit. Run `scripts/migrate.mjs` privately on the Compose database network with the maia_migrator connection string. Apply the app's `db/runtime-grants.sql` through psql as maia_migrator. The public app must never receive owner credentials.
+5. Bootstrap with the private tools image and BOOTSTRAP_EMAIL/BOOTSTRAP_PASSWORD. Use individual password accounts; no public setup or signup and no MFA. Do not put bootstrap passwords on shared command lines or in shell history.
+6. Start app, n8n and proxy. Check health, HTTPS, unauthenticated redirects and edge denial of internal endpoints. Access the n8n editor only through `ssh -L 5678:127.0.0.1:5678 <host>` at http://localhost:5678; keep its individual password login. Its HTTP/non-secure cookie setting is specific to this loopback SSH tunnel, never a public editor.
+7. Import the paired app's seven JSON workflows and configure separately scoped app credentials. All exports are inactive. n8n network calls allow only the app hostname; models and providers are called by the app. Execution content is not retained.
 
-To enhance security, create a new user to avoid working as root.
+## Live configuration
 
-```bash
-# Create a new user
-adduser <username>
+All outbound is forced off in the base Compose file. Before the agreed pilot, create an explicit reviewed Compose override setting app OUTBOUND_ENABLED to true, verify PROVIDER_MODE=live, and enable the applicable channel launch flag after approved numbers/templates and permission checks. Also unpause the application. Set AI_LIVE_ENABLED only after paid model accounts and EU fallback are verified. Startup alone must not send messages.
 
-# Grant administrative privileges
-usermod -aG sudo <username>
+WhatsApp: official Meta token, phone ID, app secret and callback challenge token. Recruitment/insights: separate Meta access, page/forms/campaign IDs and webhook secrets. SMS: Closum API key, numeric receiving sender, random URL callback token and verified CLOSUM_INBOUND_MODE. Closum V2 documentation does not describe a cryptographic callback signature; do not claim one. Verify the client's actual inbound event format/numbers before SMS_LAUNCH_APPROVED. Never enable access logging of callback tokens, phone numbers, message bodies or provider API query strings. Caddy does not configure access logging.
 
-# Set up SSH for the new user
-rsync --archive --chown=<username>:<username> ~/.ssh /home/<username>
-```
+The app has no model or provider key in n8n workflows. Never restore/import the old workflow ZIP or previous environment: those carry old client logic and embedded credentials. Revoke any old provider/API credentials before creating fresh client-owned credentials.
 
-After creating the user, log out and log back in with the new user credentials:
+## Daily backups, seven-day retention
 
-```bash
-ssh -i /path/to/your/ssh_key <username>@YOUR_SERVER_IP
-```
+Install age and keep the private decryption key under independent client-controlled custody. Configure private/backup.env using the public age recipient and an existing private backup directory on the client's infrastructure. `scripts/backup.sh` takes daily maia/n8n custom-format dumps, encrypts them, and keeps encrypted software/configuration archives in a separate subdirectory. It prunes only its own archives older than seven days after successful backups. No third-party backup vendor is added.
 
-### 1.3. Update and Install Dependencies
-Update the server's package list and install necessary software:
-```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y nginx certbot python3-certbot-nginx htop git curl
-```
+Install systemd/maia-backup.service and .timer in `/etc/systemd/system/`, reload systemd and enable the timer. Default is 03:00 Lisbon daily with missed-run recovery. Monitor service failure and the `last-success` timestamp; alert if older than 26 hours. The backup destination must have sufficient space. Validate an actual restore before launch and periodically thereafter.
 
-### 1.4. Configure Firewall
-Allow SSH and HTTP/HTTPS traffic through the firewall.
-```bash
-sudo ufw allow 'Nginx Full'
-sudo ufw allow 'OpenSSH'
-sudo ufw enable
-```
+Restore requires an isolated empty target, reviewed encrypted files, separately held age key and matching software revision. Decrypt into private temporary storage; set RESTORE_CONFIRMATION=isolated-empty-target and run `scripts/restore.sh maia.dump n8n.dump`. It refuses populated public schemas, stops app/n8n, restores with error checking, pauses campaigns/outbound, cancels queued sends/AI, removes care approvals, revokes sessions/integration keys, and leaves workers stopped. Reconcile provider sends, post-backup deletions and opt-outs before new credentials/startup. Remove decrypted temporary dumps after verification. Never restore into a running client database.
 
-## 2. Install Docker Engine
+## Verification and updates
 
-For further instructions, you can refer to the official documentation: https://docs.docker.com/engine/install/ubuntu/
+`python scripts/validate.py` verifies topology and fail-closed outbound defaults. CI validates Compose/Caddy, scans Git history and pinned image tags for high/critical vulnerabilities. Image tags are version pinned; resolve and record immutable digests at release. Apply vendor updates only with full app/flow/restore verification. Do not waive an unresolved scanner finding merely to deploy. Infrastructure CI requires Docker and public registry access.
 
-### 2.1. Set up Docker's apt repository.
+Technical support is the contract's official email, weekdays 10:00–18:00 Portugal time excluding national holidays; first response targets 5/8/12 business hours for critical/urgent/general. These are separate from chatbot availability and the sales team's handoff staffing. See the paired app's contract matrix, metric definitions and operator runbook.
 
-```bash
-# Add Docker's official GPG key:
-sudo apt-get update
-sudo apt-get install ca-certificates curl
-sudo install -m 0755 -d /etc/apt/keyrings
-sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-sudo chmod a+r /etc/apt/keyrings/docker.asc
+Security rebuilds: images/postgres.Dockerfile updates Alpine packages and rebuilds gosu with Go 1.27.1. images/caddy.Dockerfile rebuilds Caddy with the patched Go toolchain and fixed crypto/net/text/gRPC modules. CI scans the resulting images without suppressing high/critical findings. Record the built image digests with the release.
 
-# Add the repository to Apt sources:
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt-get update
-```
-
-### 2.2. Install Docker packages.
-
-```bash
-sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-```
-
-## 3. Clone the Repository
-
-Clone the project repository to your server:
-```bash
-git clone <repo-url> .
-cd ./
-```
-
-## 4. Configure Environment Variables
-
-Create a `.env` file by copying the example and fill in your secure credentials:
-```bash
-cp .example_env .env
-nano .env
-```
-**Important:** Replace all placeholder values (e.g., `secure_password_here`) with strong, unique passwords.
-
-## 5. Setup DNS
-
-In your domain provider's dashboard, create the following DNS records pointing to your server's IP address:
-
-- **A Record (n8n):** `n8n.eben-ai-one.ebenaisolutions.pt` -> `YOUR_SERVER_IP`
-- **A Record (Baserow):** `baserow.eben-ai-one.ebenaisolutions.pt` -> `YOUR_SERVER_IP`
-- **A Record (Portainer):** `portainer.eben-ai-one.ebenaisolutions.pt` -> `YOUR_SERVER_IP`
-
-## 6. Obtain SSL Certificates and Deploy
-
-The host NGINX service must be running for Certbot to issue certificates, but it must be stopped before starting the Docker containers to avoid a port conflict.
-
-### 6.1. Generate Certificates
-Run Certbot to obtain the SSL certificates.
-```bash
-# Ensure the host NGINX is running for certificate validation
-sudo systemctl start nginx
-
-sudo certbot --nginx -d n8n.eben-ai-one.ebenaisolutions.pt -d baserow.eben-ai-one.ebenaisolutions.pt -d portainer.eben-ai-one.ebenaisolutions.pt --register-unsafely-without-email --agree-tos
-```
-Follow the on-screen instructions and choose to redirect HTTP traffic to HTTPS.
-
-### 6.2. Deploy Docker Containers
-Stop the host NGINX service and start all Docker services.
-```bash
-# Stop the host NGINX to free up port 80/443 for the container
-sudo systemctl stop nginx
-
-# Start the Docker containers
-sudo docker compose up -d --force-recreate
-```
-
-## 7. Verify the Setup
-
-- **Check container status:** `docker-compose ps`
-- **Access services:**
-  - **n8n:** `https://n8n.eben-ai-one.ebenaisolutions.pt`
-  - **Baserow:** `https://baserow.eben-ai-one.ebenaisolutions.pt`
-  - **Portainer:** `https://portainer.eben-ai-one.ebenaisolutions.pt`
-
-## 8. Portainer First-Time Setup
-
-When you first access Portainer, you will be prompted to create an administrator account. Set a strong password and connect to the local Docker environment.
-
-## 9. Backups
-
-Regular backups are configured for the PostgreSQL database. It is also recommended to back up the following files:
-- `./docker-compose.yml`
-- `./.env`
-- The `/etc/letsencrypt` directory.
+The n8n security image upgrades system packages and replaces audited fast-uri/nodemailer/toml copies using checksum-locked dependency archives. It preserves n8n 2.37.10 and its existing module links; it does not enable additional nodes or mail sending. CI scans and starts the patched image. Review/remove these narrowly scoped overrides when upstream releases incorporate the fixes.
